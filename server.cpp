@@ -1,12 +1,12 @@
-#include <SFML/Network.hpp>
+п»ї#include <SFML/Network.hpp>
 #include <iostream>
 #include <string>
 #include <map>
 
 #pragma warning(disable : 4996)
-#include <windows.h>
+
 using namespace std;
-std::string currentDateTime() {
+string currentDateTime() {
 	std::time_t t = std::time(nullptr);
 	std::tm* now = std::localtime(&t);
 
@@ -18,27 +18,37 @@ std::string currentDateTime() {
 int main()
 {
 	setlocale(LC_ALL, "RU");
-	cout << "s - server, c - client" ;
+	cout << "s - server, c - client\n";
 	sf::TcpSocket socket;
+	sf::TcpSocket socket2;
+
+
 	sf::IpAddress ip = sf::IpAddress::getLocalAddress();
-	char type;
+	string type;
 	cin >> type;
-	if (type == 's') {
+	if (type == "s") {
 		sf::TcpListener listener;
-		listener.listen(2000); //передаем виртуальный порт, через который будут передаваться данные
-			if (listener.accept(socket) != sf::Socket::Done) {//через функцию accept принимаем клиента для обмена данными
-			cout << "Error";
+		listener.listen(2000); 
+		listener.accept(socket2);
+		if (listener.accept(socket) != sf::Socket::Done) {
+			if (listener.accept(socket2) != sf::Socket::Done) {
+				cout << "Error";
+			}
 		}
 	}
-	else if (type == 'c') {
+	else if (type == "c") {
 		if (socket.connect(ip, 2000) != sf::Socket::Done) cout << "Error!\n";
+	}
+	else if (type == "c2") {
+		if (socket2.connect(ip, 2000) != sf::Socket::Done) cout << "Error!\n";
 	}
 	string name;
 	cout << "Enter your name:\n";
 	cin >> name;
-	socket.setBlocking(false); //нужно для того, чтобы при передаче данных программа не останавливалась
+	socket.setBlocking(false); //РЅСѓР¶РЅРѕ РґР»СЏ С‚РѕРіРѕ, С‡С‚РѕР±С‹ РїСЂРё РїРµСЂРµРґР°С‡Рµ РґР°РЅРЅС‹С… РїСЂРѕРіСЂР°РјРјР° РЅРµ РѕСЃС‚Р°РЅР°РІР»РёРІР°Р»Р°СЃСЊ
+	socket2.setBlocking(false);
 	string message = "";
-	sf::Packet packet; //packet - форма записи данных которая посылается по сети в сформатированном виде
+	sf::Packet packet; //packet - С„РѕСЂРјР° Р·Р°РїРёСЃРё РґР°РЅРЅС‹С… РєРѕС‚РѕСЂР°СЏ РїРѕСЃС‹Р»Р°РµС‚СЃСЏ РїРѕ СЃРµС‚Рё РІ СЃС„РѕСЂРјР°С‚РёСЂРѕРІР°РЅРЅРѕРј РІРёРґРµ
 	string action;
 	while (true) {
 		cout << "Enter action: \n";
@@ -46,26 +56,29 @@ int main()
 		getline(cin, message);
 		time = currentDateTime();
 		if (message != "Get") {
-			if (message != "") { //отправка сообщения
+			if (message != "") { 
 				packet.clear();
 				packet << name << message << time;
+				if(type == "c")
 				socket.send(packet);
+				else
+					socket2.send(packet);
 				message = "";
 			}
 		}
 		if (message == "Get") {
 			vector <string> messages;
-			while (socket.receive(packet) == sf::Socket::Done) {
+			while (socket.receive(packet) == sf::Socket::Done and socket2.receive(packet) == sf::Socket::Done) {
 				string nameRec;
 				string messageRec;
 				string cur_t;
 				string res;
 				packet >> nameRec >> messageRec >> cur_t;
-				res =  nameRec + ": " + messageRec + " at " + cur_t;
+				res = nameRec + ": " + messageRec + " at " + cur_t;
 				messages.push_back(res);
 			}
 			if (messages.size() == 0) {
-				cout << "Новых сообщений нет!\n";
+				cout << "РќРѕРІС‹С… СЃРѕРѕР±С‰РµРЅРёР№ РїРѕРєР° РЅРµС‚!\n";
 			}
 			else {
 				for (auto w : messages) cout << w << endl;
